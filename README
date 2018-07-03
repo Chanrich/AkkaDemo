@@ -1,0 +1,9 @@
+Akka is built to make distributed, concurrent system design easier.
+Developers can focus more on the design instead of dealing with locking and thread management.
+
+Akka's actor model is based on asynchronous message passing. Each actor has exactly 1 mailbox that enqueues messages for this actor.
+The order of messages received that were sent at the same time by different actors are not guaranteed. However, order is in tact for message sent by same single actor.
+
+With the actor model, tasks can be split up small enough and distribute to child actors.
+For every child actor, there will be one parent actor to supervise its state. The supervisor are responsible to terminate child actor when things go south.
+

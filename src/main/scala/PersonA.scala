@@ -1,8 +1,11 @@
 package demo
-import akka.actor.{ActorRef, Props, Actor, PoisonPill}
+import akka.actor.{Actor, ActorIdentity, ActorRef, Identify, PoisonPill, Props}
+import scala.Option
+import scala.Some
 
 object PersonA{
   final case class targetChild(cName: String)
+  final case class findLostActor(aName: String)
 }
 
 class PersonA extends Actor {
@@ -20,7 +23,6 @@ class PersonA extends Actor {
     ChildList += ("Child2" -> context.actorOf(Props[ChildofPersonA], "Child2"))
     ChildList += ("Child3" -> context.actorOf(Props[ChildofPersonA], "Child3"))
     ChildList += ("Child4" -> context.actorOf(Props[ChildofPersonA], "Child4"))
-
   }
 
   override def postStop(): Unit = {
@@ -29,19 +31,20 @@ class PersonA extends Actor {
   }
 
   override def receive: Receive = {
-    case "printit" =>
-      println(s"Self: $self")
+
+    case "ShowMeYourPath" =>
+      println(s"$myName: Path=$self")
 
     case (sName :String, sMsg :String) =>
       println(s"$myName: Received tuple($sName, $sMsg) ")
-      // We can also forward to child, so the $sender in child will be the originator
+
       ChildList.get(sName).foreach(_ ! sMsg)
 
     case "ok" =>
       println(s"$myName: Got 'ok' from $sender()")
 
     case targetChild(sName) =>
-      println(s"$myName: Received command to terminate $sName")
+      println(s"$myName: Received command to terminate $sName, passing a Poison Pill")
       ChildList.get(sName).foreach(_ ! PoisonPill)
   }
 }
@@ -57,12 +60,12 @@ class ChildofPersonA extends Actor{
 
   override def postStop(): Unit = {
     super.postStop()
-    println(s"$myName is gone")
+    println(s"$myName: is terminated")
   }
 
   override def receive: Receive = {
     case "stop" =>
-      println(s"$myName: Received 'stop' message from ${sender.path.name}, replying with 'ok'")
+      println(s"$myName: Received 'stop' message from ${sender.path.name}, replying with 'ok' and terminate myself")
       // Reply to original sender
       sender() ! "ok"
       // End of life
